@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* Pinned to a single light theme on purpose: this is a hackathon demo shown
+   on a projector, and letting the OS's dark-mode preference silently swap
+   colors underneath hand-tuned Tailwind classes risks unreadable contrast
+   right before presenting. */
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
