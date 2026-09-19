@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Level, PlannerConfig, PlannerLiving } from "@/lib/planner/types";
+import { CheckBadge, Ring, SpotlightButton, StepHeading } from "../ui";
 
 type Trait = "cost" | "immersion" | "independence";
 
@@ -12,15 +13,32 @@ const TRAITS: { key: Trait; label: string; hint: string }[] = [
 ];
 
 const WEIGHT_LABEL = ["Doesn't matter", "Nice to have", "Important", "Must-have"];
-
 const LEVEL_LABEL: Record<Level, string> = { low: "Low", medium: "Medium", high: "High", varies: "Varies" };
+const LEVEL_FILL: Record<Level, number> = { low: 0.34, medium: 0.67, high: 1, varies: 0.5 };
 
-// cost is inverted: cheaper = better. "varies" is scored as the midpoint.
+// cost is inverted for scoring: cheaper = better. "varies" is scored as the midpoint.
 function trait(option: PlannerLiving, key: Trait): number {
   const level =
     key === "cost" ? option.costLevel : key === "immersion" ? option.immersionLevel : option.independenceLevel;
   const v = level === "low" ? 0 : level === "high" ? 1 : 0.5;
   return key === "cost" ? 1 - v : v;
+}
+
+function Meter({ label, level, tone }: { label: string; level: Level; tone: string }) {
+  return (
+    <div>
+      <div className="flex justify-between text-[11px] font-medium text-white/50">
+        <span>{label}</span>
+        <span className="text-white/80">{LEVEL_LABEL[level]}</span>
+      </div>
+      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full transition-[width] duration-700"
+          style={{ width: `${LEVEL_FILL[level] * 100}%`, background: tone }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export function LivingStep({
@@ -41,23 +59,27 @@ export function LivingStep({
       pct:
         totalWeight === 0
           ? 0
-          : Math.round(
-              (TRAITS.reduce((s, t) => s + weights[t.key] * trait(o, t.key), 0) / totalWeight) * 100
-            ),
+          : Math.round((TRAITS.reduce((s, t) => s + weights[t.key] * trait(o, t.key), 0) / totalWeight) * 100),
     }));
-    const best = Math.max(...scores.map((s) => s.pct));
-    return { scores: Object.fromEntries(scores.map((s) => [s.id, s.pct])), best };
+    return {
+      scores: Object.fromEntries(scores.map((s) => [s.id, s.pct])) as Record<string, number>,
+      best: Math.max(...scores.map((s) => s.pct)),
+    };
   }, [config.living, weights, totalWeight]);
 
   return (
     <div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-semibold text-slate-800">What matters to you?</p>
-        <p className="text-xs text-slate-500">Slide to set priorities — the match scores below update live.</p>
-        <div className="mt-3 grid gap-4 sm:grid-cols-3">
+      <StepHeading
+        eyebrow="Step 4 of 4"
+        title="Where will you live?"
+        sub="Tell us what matters and each option scores itself live."
+      />
+
+      <div className="glass rise mx-auto mt-12 max-w-4xl rounded-[28px] p-7" style={{ "--i": 3 } as React.CSSProperties}>
+        <div className="grid gap-7 md:grid-cols-3">
           {TRAITS.map((t) => (
             <div key={t.key}>
-              <label htmlFor={`w-${t.key}`} className="text-sm font-semibold text-slate-900">
+              <label htmlFor={`w-${t.key}`} className="text-lg font-semibold tracking-tight text-white">
                 {t.label}
               </label>
               <input
@@ -68,63 +90,57 @@ export function LivingStep({
                 step={1}
                 value={weights[t.key]}
                 onChange={(e) => setWeights((w) => ({ ...w, [t.key]: Number(e.target.value) }))}
-                className="mt-1 w-full accent-indigo-600"
+                className="mt-3 w-full accent-[#2997ff]"
               />
-              <p className="text-xs font-semibold text-indigo-600">{WEIGHT_LABEL[weights[t.key]]}</p>
-              <p className="text-[11px] text-slate-400">{t.hint}</p>
+              <p className="text-sm font-semibold text-[#5ab4ff]">{WEIGHT_LABEL[weights[t.key]]}</p>
+              <p className="text-xs text-white/45">{t.hint}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3">
-        {config.living.map((o) => {
+      <div className="mx-auto mt-8 grid max-w-4xl gap-4 md:grid-cols-2">
+        {config.living.map((o, i) => {
           const selected = value === o.id;
           const pct = scored.scores[o.id] ?? 0;
           const isBest = totalWeight > 0 && pct === scored.best;
           return (
-            <button
-              key={o.id}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => onSelect(o.id)}
-              className={`rounded-2xl border p-4 text-left shadow-sm transition duration-200 ${
-                selected
-                  ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-300"
-                  : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-3xl" aria-hidden>
-                  {o.icon}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-slate-900">{o.name}</span>
+            <div key={o.id} className="rise" style={{ "--i": i + 4 } as React.CSSProperties}>
+              <SpotlightButton
+                type="button"
+                aria-pressed={selected}
+                onClick={() => onSelect(o.id)}
+                className={`glass flex h-full w-full flex-col rounded-[28px] p-6 text-left transition duration-300 hover:-translate-y-1 ${
+                  selected ? "!border-white/80 shadow-[0_0_60px_rgba(41,151,255,0.35)]" : ""
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-2xl font-semibold tracking-tight text-white">{o.name}</h3>
+                      {selected && <CheckBadge />}
+                    </div>
                     {isBest && (
-                      <span className="pop-in rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                      <span className="pop-in mt-2 inline-block rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
                         Best match
                       </span>
                     )}
                   </div>
-                  <div className="mt-1 flex items-center gap-2">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full bg-indigo-500 transition-[width] duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="w-10 text-right text-xs font-bold text-slate-700">{pct}%</span>
+                  <div className="relative">
+                    <Ring pct={pct} size={62} />
+                    <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-white">
+                      {pct}
+                    </span>
                   </div>
                 </div>
-              </div>
-              <p className="mt-2 text-sm text-slate-600">{o.description}</p>
-              <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-                <span>Cost: <b className="text-slate-800">{LEVEL_LABEL[o.costLevel]}</b></span>
-                <span>Immersion: <b className="text-slate-800">{LEVEL_LABEL[o.immersionLevel]}</b></span>
-                <span>Independence: <b className="text-slate-800">{LEVEL_LABEL[o.independenceLevel]}</b></span>
-              </div>
-            </button>
+                <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-[#a1a1a6]">{o.description}</p>
+                <div className="mt-auto grid grid-cols-3 gap-4 pt-5">
+                  <Meter label="Cost" level={o.costLevel} tone="#f59e0b" />
+                  <Meter label="Immersion" level={o.immersionLevel} tone="#34d399" />
+                  <Meter label="Independence" level={o.independenceLevel} tone="#60a5fa" />
+                </div>
+              </SpotlightButton>
+            </div>
           );
         })}
       </div>

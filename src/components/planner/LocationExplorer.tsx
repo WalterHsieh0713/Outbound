@@ -1,43 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { PlannerConfig } from "@/lib/planner/types";
+import { useCallback, useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import type { PlannerConfig, PoiKind } from "@/lib/planner/types";
 import { CityStreetMap } from "./CityStreetMap";
-import { LocationGlobe } from "./LocationGlobe";
 
 const MAP_LOAD_TIMEOUT_MS = 12000;
 
 interface Props {
   config: PlannerConfig;
+  /** true once the background globe has finished flying in over the destination */
+  arrived: boolean;
   budgetUsd: number;
   selectedId?: string;
   hoveredId?: string;
+  visibleKinds: Record<PoiKind, boolean>;
+  activePoiId?: string;
   onSelect: (id: string) => void;
   onHover: (id: string | undefined) => void;
+  onPoiSelect: (id: string | undefined) => void;
+  toolbar?: ReactNode;
+  children?: ReactNode;
 }
 
 /**
- * 3D globe fly-in (US -> UK) that hands off to a street-level map for picking a neighborhood.
- * If map tiles can't load, the globe simply stays up and the cards beneath still work.
+ * A glass window onto the street map. It stays transparent while the background globe flies in,
+ * then the map fades in on top. If tiles can't load, the cards outside the panel still work.
  */
-export function LocationExplorer({ config, budgetUsd, selectedId, hoveredId, onSelect, onHover }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(640);
-  const [arrived, setArrived] = useState(false);
+export function LocationExplorer({ config, arrived, toolbar, children, ...mapProps }: Props) {
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [view, setView] = useState<"auto" | "globe">("auto");
   const [mapFailed, setMapFailed] = useState(false);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width;
-      if (w) setWidth(Math.min(Math.round(w), 760));
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     if (mapLoaded) return;
@@ -45,76 +37,37 @@ export function LocationExplorer({ config, budgetUsd, selectedId, hoveredId, onS
     return () => clearTimeout(t);
   }, [mapLoaded]);
 
-  const handleArrived = useCallback(() => setArrived(true), []);
   const handleLoaded = useCallback(() => setMapLoaded(true), []);
-
-  const showMap = view === "auto" && arrived && mapLoaded;
-  const height = Math.max(380, Math.min(Math.round(width * 0.85), 540));
+  const showMap = arrived && mapLoaded;
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full overflow-hidden rounded-2xl border border-slate-800 bg-[radial-gradient(circle_at_50%_38%,#1e1b4b,#020617_72%)] shadow-md"
-      style={{ height }}
-    >
-      <div
-        className={`absolute inset-0 transition-opacity duration-700 ${showMap ? "opacity-0 delay-700" : "opacity-100"}`}
-      >
-        <LocationGlobe
-          destAdminName={config.destCountry}
-          cityName={config.city}
-          center={{ lat: config.cityLat, lng: config.cityLng }}
-          origin={config.origin}
-          width={width}
-          height={height}
-          target={view === "globe" ? "world" : "region"}
-          onArrived={handleArrived}
-        />
-      </div>
-
-      <div
-        className={`absolute inset-0 transition-opacity duration-1000 ${
-          showMap ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
-      >
+    <div className="relative h-[62vh] min-h-[460px] w-full overflow-hidden rounded-[28px] border border-white/15 shadow-2xl shadow-black/50">
+      <div className={`absolute inset-0 transition-opacity duration-1000 ${showMap ? "opacity-100" : "opacity-0"}`}>
         <CityStreetMap
           locations={config.locations}
-          budgetUsd={budgetUsd}
-          selectedId={selectedId}
-          hoveredId={hoveredId}
+          pois={config.pois}
           visible={showMap}
-          onSelect={onSelect}
-          onHover={onHover}
           onLoaded={handleLoaded}
+          {...mapProps}
         />
       </div>
 
-      <div className="absolute right-3 top-3 z-10 flex gap-2">
-        <button
-          type="button"
-          onClick={() => setView("globe")}
-          className="rounded-full bg-slate-900/85 px-3 py-1.5 text-xs font-semibold text-slate-100 ring-1 ring-white/20 backdrop-blur transition hover:bg-slate-800"
-        >
-          🌍 World view
-        </button>
-        <button
-          type="button"
-          onClick={() => setView("auto")}
-          className="rounded-full bg-slate-900/85 px-3 py-1.5 text-xs font-semibold text-slate-100 ring-1 ring-white/20 backdrop-blur transition hover:bg-slate-800"
-        >
-          📍 {config.city}
-        </button>
-      </div>
+      {!showMap && (
+        <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-8">
+          <p className="glass rounded-full px-4 py-2 text-sm text-white/80">
+            {mapFailed && !mapLoaded
+              ? "Street map unavailable offline — pick a neighborhood from the cards below"
+              : arrived
+                ? "Loading street map…"
+                : `Flying to ${config.city}…`}
+          </p>
+        </div>
+      )}
 
-      <p className="pointer-events-none absolute bottom-3 left-3 z-10 max-w-[80%] rounded bg-slate-900/60 px-2 py-1 text-[11px] text-slate-200">
-        {showMap
-          ? "Click a neighborhood pin · colors follow your rent budget"
-          : mapFailed && !mapLoaded
-            ? "Street map unavailable offline — pick a neighborhood from the cards below"
-            : arrived
-              ? "Loading street map…"
-              : "Flying in from the US…"}
-      </p>
+      {showMap && toolbar && <div className="absolute left-4 top-4 z-10 flex flex-wrap gap-2">{toolbar}</div>}
+      {showMap && children && (
+        <div className="absolute bottom-4 left-4 right-4 z-10 sm:right-auto sm:w-[380px]">{children}</div>
+      )}
     </div>
   );
 }

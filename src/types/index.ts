@@ -70,6 +70,9 @@ export interface EmergencyInfo {
   usEmbassyAddress: string;
   usEmbassyPhone: string;
   usEmbassyEmergencyPhone?: string;
+  /** Approximate embassy location, geocoded from its street address (for the planner map pin). */
+  lat?: number;
+  lng?: number;
   notes?: string;
 }
 

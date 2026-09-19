@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { PlannerConfig } from "@/lib/planner/types";
+import { ACCENT, CheckBadge, StepHeading } from "../ui";
 
 export function MajorStep({
   config,
@@ -13,61 +14,89 @@ export function MajorStep({
   onSelect: (id: string) => void;
 }) {
   const [hoverId, setHoverId] = useState<string>();
-  const shown = config.majors.find((m) => m.id === (hoverId ?? value));
+  const activeId = hoverId ?? value ?? config.majors.find((m) => m.fit === "strong")?.id ?? config.majors[0].id;
+  const active = config.majors.find((m) => m.id === activeId) ?? config.majors[0];
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {config.majors.map((m) => {
-          const selected = value === m.id;
-          return (
-            <button
-              key={m.id}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => onSelect(m.id)}
-              onMouseEnter={() => setHoverId(m.id)}
-              onMouseLeave={() => setHoverId(undefined)}
-              onFocus={() => setHoverId(m.id)}
-              onBlur={() => setHoverId(undefined)}
-              className={`group relative flex flex-col items-center gap-2 rounded-2xl border p-4 text-center shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg ${
-                selected
-                  ? "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-300"
-                  : "border-slate-200 bg-white hover:border-indigo-300"
+      <StepHeading
+        eyebrow="Step 1 of 4"
+        title="What are you studying?"
+        sub={`Your field shapes how well the ${config.destCountry} fits. Hover to preview, click to choose.`}
+      />
+
+      <div className="mx-auto mt-10 grid max-w-5xl gap-10 md:grid-cols-[1.3fr_1fr] md:gap-14">
+        <ul className="flex flex-col" onMouseLeave={() => setHoverId(undefined)}>
+          {config.majors.map((m, i) => {
+            const selected = value === m.id;
+            const lit = selected || hoverId === m.id;
+            return (
+              <li key={m.id} className="rise" style={{ "--i": i + 3 } as React.CSSProperties}>
+                <button
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => onSelect(m.id)}
+                  onMouseEnter={() => setHoverId(m.id)}
+                  onFocus={() => setHoverId(m.id)}
+                  onBlur={() => setHoverId(undefined)}
+                  className="group flex w-full items-center gap-4 rounded-2xl py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                >
+                  <span
+                    className={`text-3xl font-semibold leading-tight tracking-tight transition-all duration-300 md:text-[2.6rem] ${
+                      lit ? "translate-x-2 text-white" : value ? "text-white/25" : "text-white/45"
+                    }`}
+                  >
+                    {m.label}
+                  </span>
+                  {m.fit === "strong" && (
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]"
+                      title="Strong fit"
+                    />
+                  )}
+                  {selected && <CheckBadge className="shrink-0" />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+
+        <aside className="md:sticky md:top-28 md:self-start">
+          <div key={active.id} className="pop-in glass-strong rounded-[28px] p-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/45">
+              How the {config.destCountry} fits
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold leading-snug tracking-tight text-white">{active.label}</h2>
+            <span
+              className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                active.fit === "strong" ? "bg-emerald-400/15 text-emerald-300" : "bg-white/10 text-white/60"
               }`}
             >
-              <span className="text-4xl transition duration-200 group-hover:scale-125" aria-hidden>
-                {m.icon}
-              </span>
-              <span className="text-sm font-semibold leading-tight text-slate-900">{m.label}</span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                  m.fit === "strong" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-500"
-                }`}
-              >
-                {m.fit === "strong" ? "Strong fit" : "Possible fit"}
-              </span>
-              {selected && (
-                <span className="pop-in absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
-                  ✓
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+              {active.fit === "strong" ? "Strong fit" : "Possible fit"}
+            </span>
+            <p className="mt-4 text-[15px] leading-relaxed text-[#a1a1a6]">{active.note}</p>
 
-      <div className="mt-4 min-h-[88px] rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" aria-live="polite">
-        {shown ? (
-          <div key={shown.id} className="pop-in">
-            <p className="text-sm font-bold text-slate-900">
-              {shown.icon} {shown.label} in the {config.destCountry}
+            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.14em] text-white/45">
+              Top destinations for this field
             </p>
-            <p className="mt-1 text-sm text-slate-600">{shown.note}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {active.topCountries.map((c) => {
+                const isUk = c === config.destCountry;
+                return (
+                  <span
+                    key={c}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      isUk ? "text-white" : "bg-white/8 text-white/60"
+                    }`}
+                    style={isUk ? { background: ACCENT } : { background: "rgba(255,255,255,0.08)" }}
+                  >
+                    {c}
+                  </span>
+                );
+              })}
+            </div>
           </div>
-        ) : (
-          <p className="text-sm text-slate-400">Hover a field to see how the {config.destCountry} fits it.</p>
-        )}
+        </aside>
       </div>
     </div>
   );

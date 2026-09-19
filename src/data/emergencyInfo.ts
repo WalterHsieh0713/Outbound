@@ -15,6 +15,8 @@ export const emergencyInfo: EmergencyInfo[] = [
     destCountry: "United Kingdom",
     localEmergencyNumber: "999 (or 112) — fire, police, ambulance",
     usEmbassyName: "U.S. Embassy London",
+    lat: 51.482,
+    lng: -0.128,
     usEmbassyAddress: "33 Nine Elms Lane, London SW11 7US, United Kingdom",
     usEmbassyPhone: "+44 20 7499 9000",
     usEmbassyEmergencyPhone: "+44 20 7499 9000 (same number, staffed 24/7 for US citizen emergencies)",
