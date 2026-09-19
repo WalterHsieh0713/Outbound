@@ -22,6 +22,8 @@ export const neighborhoods: Neighborhood[] = [
     currencyCode: "GBP",
     relativeX: 73,
     relativeY: 44,
+    lat: 51.5416,
+    lng: -0.0033,
     sourceNote:
       "Rightmove & Uhomes Stratford student accommodation listings (Sept 2026): general area rent ~£700/month, studios £600-£1,000/month, PBSA £450-£800/month. en.uhomes.com/uk/london/place/stratford ; rightmove.co.uk/student-accommodation/Stratford.html",
   },
@@ -35,6 +37,8 @@ export const neighborhoods: Neighborhood[] = [
     currencyCode: "GBP",
     relativeX: 58,
     relativeY: 47,
+    lat: 51.5264,
+    lng: -0.0787,
     sourceNote:
       "SpareRoom live Shoreditch/E2 flatshare listings (Sept 2026): double/triple rooms £800-£1,350 pcm. spareroom.co.uk/flatshare/london/shoreditch",
   },
@@ -48,6 +52,8 @@ export const neighborhoods: Neighborhood[] = [
     currencyCode: "GBP",
     relativeX: 47,
     relativeY: 33,
+    lat: 51.5392,
+    lng: -0.1426,
     sourceNote:
       "SpareRoom live Camden Town/NW1 flatshare listings (Sept 2026): double rooms £750-£1,350 pcm. London-wide average room rent £978/month per SpareRoom Rental Index Q1 2026. spareroom.co.uk/flatshare/london/camden_town",
   },

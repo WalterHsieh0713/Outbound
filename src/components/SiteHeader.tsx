@@ -14,6 +14,12 @@ export function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-1 text-sm font-semibold">
           <Link
+            href="/plan/uk"
+            className="rounded-md px-3 py-1.5 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+          >
+            Plan
+          </Link>
+          <Link
             href="/guide"
             className="rounded-md px-3 py-1.5 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
           >

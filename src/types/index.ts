@@ -99,6 +99,9 @@ export interface Neighborhood {
   currencyCode: string;
   relativeX: number;
   relativeY: number;
+  /** Approximate real-world centroid; optional, only the 3D globe planner needs it. */
+  lat?: number;
+  lng?: number;
   sourceNote?: string;
 }
 

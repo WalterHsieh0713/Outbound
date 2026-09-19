@@ -14,6 +14,13 @@ export default function Home() {
         real sources.
       </p>
 
+      <Link
+        href="/plan/uk"
+        className="mt-6 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
+      >
+        Plan a UK semester, step by step →
+      </Link>
+
       <div className="mt-8 w-full">
         <DestinationGlobe />
       </div>
